@@ -23,7 +23,7 @@ import com.enotes.project.service.CategoryService;
 @RequestMapping("/api/v1/category")
 public class CategoryController {
     @Autowired
-    CategoryService categoryService;
+    private CategoryService categoryService;
 
     @PostMapping("/save-category")
     public ResponseEntity<?> saveCategory(@RequestBody CategoryDto categoryDta){
