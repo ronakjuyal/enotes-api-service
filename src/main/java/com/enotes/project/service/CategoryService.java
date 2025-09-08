@@ -7,14 +7,11 @@ import com.enotes.project.dto.CategoryResponse;
 
 public interface CategoryService {
 
+    public CategoryDto getCategoryById(Integer id) throws Exception;
     public Boolean saveCategory(CategoryDto categoryDto);
-
     public List<CategoryResponse> getAllCategory();
-
     public List<CategoryResponse> getActiveCategory();
-
-    public CategoryDto getCategoryById(Integer id);
-
     public Boolean deleteCategory(Integer id);
+    
 
 } 

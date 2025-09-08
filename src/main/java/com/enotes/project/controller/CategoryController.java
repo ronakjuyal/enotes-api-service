@@ -14,7 +14,6 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.util.CollectionUtils;
-import org.springframework.util.ObjectUtils;
 
 import com.enotes.project.dto.CategoryDto;
 import com.enotes.project.dto.CategoryResponse;
@@ -57,11 +56,8 @@ public class CategoryController {
         return new ResponseEntity<>(activeCategory,HttpStatus.OK);
     }
     @GetMapping("{id}")
-    public ResponseEntity<?> getCategoryDetailById(@PathVariable Integer id){
+    public ResponseEntity<?> getCategoryDetailById(@PathVariable Integer id) throws Exception{
         CategoryDto categoryDto=categoryService.getCategoryById(id);
-        if(ObjectUtils.isEmpty(categoryDto)){
-            return new ResponseEntity<>("category not found with Id="+id,HttpStatus.NOT_FOUND);
-        }
         return new ResponseEntity<>(categoryDto,HttpStatus.OK);
     }
     @DeleteMapping("/{id}")
