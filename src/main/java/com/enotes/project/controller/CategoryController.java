@@ -18,6 +18,7 @@ import org.springframework.util.CollectionUtils;
 import com.enotes.project.dto.CategoryDto;
 import com.enotes.project.dto.CategoryResponse;
 import com.enotes.project.service.CategoryService;
+import com.enotes.project.util.CommonUtil;
 
 @RestController
 @RequestMapping("/api/v1/category")
@@ -29,23 +30,23 @@ public class CategoryController {
     public ResponseEntity<?> saveCategory(@RequestBody CategoryDto categoryDta){
         Boolean saveCategory = categoryService.saveCategory(categoryDta);
         if(saveCategory){
-            return new ResponseEntity<>("saved successfully",HttpStatus.CREATED);
+            return CommonUtil.createBuildResponseMessage("saved success", HttpStatus.CREATED);
         }
         else{
-            return new ResponseEntity<>("not saved",HttpStatus.INTERNAL_SERVER_ERROR);
+            return CommonUtil.createErrorResponseMessage("not saved", HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
     @GetMapping("hello")
     public String print(){
         return "hello"; 
     }
-    @GetMapping("/category")
+    @GetMapping("/")
     public ResponseEntity<?> getAllCategory(){
         List<CategoryResponse> allCategory = categoryService.getAllCategory();
         if(CollectionUtils.isEmpty(allCategory)){
             return ResponseEntity.noContent().build();
         }
-        return new ResponseEntity<>(allCategory,HttpStatus.OK);
+        return CommonUtil.createBuildResponse(allCategory, HttpStatus.OK);
     }
     @GetMapping("/active")
     public ResponseEntity<?> getActiveCategory(){
@@ -53,20 +54,20 @@ public class CategoryController {
         if(CollectionUtils.isEmpty(activeCategory)){
             return ResponseEntity.noContent().build();
         }
-        return new ResponseEntity<>(activeCategory,HttpStatus.OK);
+        return CommonUtil.createBuildResponse(activeCategory, HttpStatus.CREATED);
     }
     @GetMapping("{id}")
     public ResponseEntity<?> getCategoryDetailById(@PathVariable Integer id) throws Exception{
         CategoryDto categoryDto=categoryService.getCategoryById(id);
-        return new ResponseEntity<>(categoryDto,HttpStatus.OK);
+        return CommonUtil.createBuildResponse(categoryDto,HttpStatus.OK);
     }
     @DeleteMapping("/{id}")
     public ResponseEntity<?> deleteCategoryById(@PathVariable Integer id){
         Boolean deleted = categoryService.deleteCategory(id);
         if(deleted){
-            return new ResponseEntity<>("category delete success",HttpStatus.OK);
+            return CommonUtil.createBuildResponseMessage("category delete success",HttpStatus.OK);
         }
-        return new ResponseEntity<>("Category not deleted",HttpStatus.INTERNAL_SERVER_ERROR);
+        return CommonUtil.createErrorResponseMessage("Category not deleted",HttpStatus.INTERNAL_SERVER_ERROR);
     }
 
 }
