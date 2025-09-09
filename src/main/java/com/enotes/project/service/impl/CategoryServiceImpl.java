@@ -11,6 +11,7 @@ import org.springframework.util.ObjectUtils;
 import com.enotes.project.dto.CategoryDto;
 import com.enotes.project.dto.CategoryResponse;
 import com.enotes.project.entity.Category;
+import com.enotes.project.exception.ExistDataException;
 import com.enotes.project.exception.ResourceNotFoundException;
 import com.enotes.project.repository.CategoryRepository;
 import com.enotes.project.service.CategoryService;
@@ -27,6 +28,10 @@ public class CategoryServiceImpl implements CategoryService {
     @Override
     public Boolean saveCategory(CategoryDto categoryDto){
         validation.categoryValidation(categoryDto);
+        Boolean exist= categoryRepo.existsByName(categoryDto.getName());
+        if(exist){
+            throw new ExistDataException("categry already exist");
+        }
         Category category = mapper.map(categoryDto, Category.class);
         if(ObjectUtils.isEmpty(category.getId())){
             category.setIsDeleted(false);
