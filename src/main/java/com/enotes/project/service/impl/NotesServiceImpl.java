@@ -2,8 +2,11 @@ package com.enotes.project.service.impl;
 
 import java.io.File;
 import java.io.IOException;
+import java.io.InputStream;
 import java.nio.file.Files;
+import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.nio.file.StandardOpenOption;
 import java.util.Arrays;
 import java.util.List;
 import java.util.UUID;
@@ -55,9 +58,11 @@ public class NotesServiceImpl implements NotesService{
         if(!exists){
             throw new ResourceNotFoundException("category is invalid");
         }
-        Notes Notes = mapper.map(noteDto, Notes.class);
+        Notes newNotes = mapper.map(noteDto, Notes.class);
         FileDetails fileDetails=saveFileDetails(file);
-        Notes save = notesRepository.save(Notes);
+        if(!ObjectUtils.isEmpty(fileDetails)) newNotes.setFileDetails(fileDetails);
+        else newNotes.setFileDetails(null);
+        Notes save = notesRepository.save(newNotes);
         if(ObjectUtils.isEmpty(save)){
             return false;
         }
@@ -84,8 +89,8 @@ public class NotesServiceImpl implements NotesService{
             if(upload!=0){
                 FileDetails fileDetails=new FileDetails();
                 fileDetails.setOriginalFileName(originalFilename);
-                fileDetails.setUploadFileName(getDisplayFileName(uploadFileName));
-                fileDetails.setDisplayFileName(storePath);
+                fileDetails.setUploadFileName(uploadFileName);
+                fileDetails.setDisplayFileName(getDisplayFileName(originalFilename));
                 fileDetails.setFileSize(file.getSize());
                 fileDetails.setPath(storePath);
                 FileDetails savDetails=fileRepository.save(fileDetails);
@@ -114,4 +119,20 @@ public class NotesServiceImpl implements NotesService{
         return notesDto;
     }
 
+    @Override
+    public InputStream downloadFile(Path filePath) throws IOException {
+        return Files.newInputStream(filePath, StandardOpenOption.READ);
+    }
+
+    @Override
+    public FileDetails getFileDetails(Integer id) {
+          FileDetails fileDetails = fileRepository.findById(id).orElseThrow(()-> new ResourceNotFoundException("file is notavilable"));
+          return fileDetails;
+    }
+    @Override
+    public String getContentType(Path filePath) throws IOException {
+        String contentType = Files.probeContentType(filePath);
+        return (contentType != null) ? contentType : "application/octet-stream";
+    }
+    
 }
