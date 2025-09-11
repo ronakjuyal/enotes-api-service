@@ -56,7 +56,7 @@ public class CategoryController {
         }
         return CommonUtil.createBuildResponse(activeCategory, HttpStatus.CREATED);
     }
-    @GetMapping("{id}")
+    @GetMapping("/{id}")
     public ResponseEntity<?> getCategoryDetailById(@PathVariable Integer id) throws Exception{
         CategoryDto categoryDto=categoryService.getCategoryById(id);
         return CommonUtil.createBuildResponse(categoryDto,HttpStatus.OK);
