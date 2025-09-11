@@ -1,18 +1,34 @@
 package com.enotes.project.service.impl;
 
+import java.io.File;
+import java.io.IOException;
+import java.io.InputStream;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.nio.file.StandardOpenOption;
+import java.util.Arrays;
 import java.util.List;
+import java.util.UUID;
 
+import org.apache.commons.io.FilenameUtils;
 import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.util.ObjectUtils;
+import org.springframework.web.multipart.MultipartFile;
 
 import com.enotes.project.dto.NotesDto;
+import com.enotes.project.entity.FileDetails;
 import com.enotes.project.entity.Notes;
 import com.enotes.project.exception.ResourceNotFoundException;
 import com.enotes.project.repository.CategoryRepository;
+import com.enotes.project.repository.FileRepository;
 import com.enotes.project.repository.NotesRepository;
 import com.enotes.project.service.NotesService;
+import com.fasterxml.jackson.databind.ObjectMapper;
+
 
 @Service
 public class NotesServiceImpl implements NotesService{
@@ -25,20 +41,77 @@ public class NotesServiceImpl implements NotesService{
     @Autowired
     CategoryRepository categoryRepository;
 
+    @Autowired
+    FileRepository fileRepository;
+
+   @Value("${file.upload.path}")
+	private String uploadPath;
+
     @Override
-    public Boolean saveNotes(NotesDto notesDto) {
+    public Boolean saveNotes(String  notes, MultipartFile file) throws Exception{
+
         //validation notes
-        boolean exists = categoryRepository.existsById(notesDto.getCategory().getId());
+        ObjectMapper ob = new ObjectMapper();
+		NotesDto noteDto = ob.readValue(notes, NotesDto.class);
+
+        boolean exists = categoryRepository.existsById(noteDto.getCategory().getId());
         if(!exists){
             throw new ResourceNotFoundException("category is invalid");
         }
-        Notes Notes = mapper.map(notesDto, Notes.class);
-        Notes save = notesRepository.save(Notes);
+        Notes newNotes = mapper.map(noteDto, Notes.class);
+        FileDetails fileDetails=saveFileDetails(file);
+        if(!ObjectUtils.isEmpty(fileDetails)) newNotes.setFileDetails(fileDetails);
+        else newNotes.setFileDetails(null);
+        Notes save = notesRepository.save(newNotes);
         if(ObjectUtils.isEmpty(save)){
             return false;
         }
         return true;
     }
+
+    private FileDetails saveFileDetails(MultipartFile file) throws IOException{
+        if(!ObjectUtils.isEmpty(file) && !file.isEmpty()){
+            String originalFilename = file.getOriginalFilename();
+            String extension = FilenameUtils.getExtension(originalFilename);
+            List<String> extentionAllow = Arrays.asList("pdf","xlsx","png","jpg");
+            if(!extentionAllow.contains(extension)){
+                throw new IllegalArgumentException("Invalid file format, ulpoad only .pdf .xlsx .png .jpg");
+            }
+            UUID randomUUID = UUID.randomUUID();
+            String uploadFileName=randomUUID+"."+extension;
+            File saveFile = new File(uploadPath);
+            if(!saveFile.exists()){
+                saveFile.mkdir();
+            }
+            String storePath=uploadPath.concat(uploadFileName);
+
+            long upload = Files.copy(file.getInputStream(), Paths.get(storePath));
+            if(upload!=0){
+                FileDetails fileDetails=new FileDetails();
+                fileDetails.setOriginalFileName(originalFilename);
+                fileDetails.setUploadFileName(uploadFileName);
+                fileDetails.setDisplayFileName(getDisplayFileName(originalFilename));
+                fileDetails.setFileSize(file.getSize());
+                fileDetails.setPath(storePath);
+                FileDetails savDetails=fileRepository.save(fileDetails);
+                return savDetails;
+                
+            }
+        }
+        return null;
+    }
+
+    private String getDisplayFileName(String originalFilename) {
+	
+		String extension = FilenameUtils.getExtension(originalFilename);
+		String fileName = FilenameUtils.removeExtension(originalFilename);
+
+		if (fileName.length() > 8) {
+			fileName = fileName.substring(0, 7);
+		}
+		fileName = fileName + "." + extension;
+		return fileName;
+	}
 
     @Override
     public List<NotesDto> getAllNotes() {
@@ -46,4 +119,20 @@ public class NotesServiceImpl implements NotesService{
         return notesDto;
     }
 
+    @Override
+    public InputStream downloadFile(Path filePath) throws IOException {
+        return Files.newInputStream(filePath, StandardOpenOption.READ);
+    }
+
+    @Override
+    public FileDetails getFileDetails(Integer id) {
+          FileDetails fileDetails = fileRepository.findById(id).orElseThrow(()-> new ResourceNotFoundException("file is notavilable"));
+          return fileDetails;
+    }
+    @Override
+    public String getContentType(Path filePath) throws IOException {
+        String contentType = Files.probeContentType(filePath);
+        return (contentType != null) ? contentType : "application/octet-stream";
+    }
+    
 }
