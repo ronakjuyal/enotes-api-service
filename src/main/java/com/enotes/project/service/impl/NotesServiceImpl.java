@@ -15,10 +15,14 @@ import org.apache.commons.io.FilenameUtils;
 import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.util.ObjectUtils;
 import org.springframework.web.multipart.MultipartFile;
 
+import com.enotes.project.dto.NoteResponse;
 import com.enotes.project.dto.NotesDto;
 import com.enotes.project.entity.FileDetails;
 import com.enotes.project.entity.Notes;
@@ -133,6 +137,23 @@ public class NotesServiceImpl implements NotesService{
     public String getContentType(Path filePath) throws IOException {
         String contentType = Files.probeContentType(filePath);
         return (contentType != null) ? contentType : "application/octet-stream";
+    }
+
+    @Override
+    public NoteResponse getAllNotesByUser(Integer userId,Integer pageNo, Integer pageSize) {
+        Pageable pageable = PageRequest.of(pageNo,pageSize);
+        Page<Notes> pages = notesRepository.findByCreatedBy(userId,pageable);
+        List<NotesDto> notesDto = pages.get().map(m->mapper.map(m,NotesDto.class)).toList();
+        NoteResponse notes=NoteResponse.builder()
+            .notes(notesDto)
+            .pageNo(pages.getNumber())
+            .totalPages(pages.getTotalPages())
+            .pagesize(pages.getSize())
+            .totalElement(pages.getTotalElements())
+            .isFirst(pages.isFirst())
+            .isLast(pages.isLast())
+            .build();
+        return notes;
     }
     
 }

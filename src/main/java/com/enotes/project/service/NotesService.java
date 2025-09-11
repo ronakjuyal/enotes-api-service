@@ -7,8 +7,10 @@ import java.util.List;
 
 import org.springframework.web.multipart.MultipartFile;
 
+import com.enotes.project.dto.NoteResponse;
 import com.enotes.project.dto.NotesDto;
 import com.enotes.project.entity.FileDetails;
+
 
 public interface NotesService {
     public Boolean saveNotes(String  note, MultipartFile file) throws Exception;
@@ -16,4 +18,5 @@ public interface NotesService {
     public FileDetails getFileDetails(Integer id);
     public InputStream downloadFile(Path filePath) throws IOException;
     String getContentType(Path filePath) throws IOException;
+    public NoteResponse getAllNotesByUser(Integer userId,Integer pageNo, Integer pageSize);
 }
