@@ -19,4 +19,9 @@ public interface NotesService {
     public InputStream downloadFile(Path filePath) throws IOException;
     String getContentType(Path filePath) throws IOException;
     public NoteResponse getAllNotesByUser(Integer userId,Integer pageNo, Integer pageSize);
+    public void softDeleteNote(Integer id);
+    public void restoreNote(Integer id);
+    public List<NotesDto> getUserRecycleBin(Integer userId);
+    public void hardDeleteNote(Integer id);
+    public int emptyRecycleBin();
 }

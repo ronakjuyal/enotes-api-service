@@ -7,6 +7,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardOpenOption;
+import java.time.LocalDateTime;
 import java.util.Arrays;
 import java.util.List;
 import java.util.UUID;
@@ -19,6 +20,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.ObjectUtils;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -57,15 +59,17 @@ public class NotesServiceImpl implements NotesService{
         //validation notes
         ObjectMapper ob = new ObjectMapper();
 		NotesDto noteDto = ob.readValue(notes, NotesDto.class);
-
-        boolean exists = categoryRepository.existsById(noteDto.getCategory().getId());
-        if(!exists){
-            throw new ResourceNotFoundException("category is invalid");
+        if(!ObjectUtils.isEmpty(noteDto.getId())){
+            if(!notesRepository.existsById(noteDto.getId())) throw new ResourceNotFoundException("invalid note id");
         }
+        noteDto.setIsDeleted(false);
+        noteDto.setDeletedOn(null);
         Notes newNotes = mapper.map(noteDto, Notes.class);
         FileDetails fileDetails=saveFileDetails(file);
+
         if(!ObjectUtils.isEmpty(fileDetails)) newNotes.setFileDetails(fileDetails);
         else newNotes.setFileDetails(null);
+
         Notes save = notesRepository.save(newNotes);
         if(ObjectUtils.isEmpty(save)){
             return false;
@@ -142,7 +146,7 @@ public class NotesServiceImpl implements NotesService{
     @Override
     public NoteResponse getAllNotesByUser(Integer userId,Integer pageNo, Integer pageSize) {
         Pageable pageable = PageRequest.of(pageNo,pageSize);
-        Page<Notes> pages = notesRepository.findByCreatedBy(userId,pageable);
+        Page<Notes> pages = notesRepository.findByCreatedByAndIsDeletedFalse(userId,pageable);
         List<NotesDto> notesDto = pages.get().map(m->mapper.map(m,NotesDto.class)).toList();
         NoteResponse notes=NoteResponse.builder()
             .notes(notesDto)
@@ -155,5 +159,51 @@ public class NotesServiceImpl implements NotesService{
             .build();
         return notes;
     }
+
+    @Override
+    public void softDeleteNote(Integer id) {
+        Notes note = notesRepository.findById(id).orElseThrow(()->new ResourceNotFoundException("notes id invalid not found"));
+        note.setIsDeleted(true);
+        note.setDeletedOn(LocalDateTime.now());
+        notesRepository.save(note);
+    }
+
+    @Override
+    public void restoreNote(Integer id) {
+        Notes note = notesRepository.findById(id).orElseThrow(()->new ResourceNotFoundException("notes id invalid not found"));
+        note.setIsDeleted(false);
+        note.setDeletedOn(null);
+        notesRepository.save(note);
+        
+    }
+
+    @Override
+    public List<NotesDto> getUserRecycleBin(Integer userId) {
+        List<Notes> notes=notesRepository.findByCreatedByAndIsDeletedTrue(userId);
+        List<NotesDto> notesDto = notes.stream().map(note->mapper.map(note, NotesDto.class)).toList();
+        return notesDto;
+        
+    }
+
+    @Override
+    public void hardDeleteNote(Integer id) {
+        Notes note = notesRepository.findById(id).orElseThrow(()->new ResourceNotFoundException("notes fond to delete"));
+        if(note.getIsDeleted()){
+            notesRepository.delete(note);
+        } else{
+            throw new IllegalArgumentException("cannot delete, first move to notes to recycle bin");
+        }
+    }
+
+    @Override
+    @Transactional
+    public int emptyRecycleBin() {
+        return notesRepository.deleteByIsDeletedTrue();
+        
+    }
+    
+    
+
+    
     
 }

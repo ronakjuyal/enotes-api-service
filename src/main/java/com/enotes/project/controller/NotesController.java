@@ -6,6 +6,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.List;
 
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.io.InputStreamResource;
 import org.springframework.core.io.Resource;
@@ -15,6 +16,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.util.CollectionUtils;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -86,6 +88,38 @@ public class NotesController {
         //     return CommonUtil.createErrorResponseMessage("not saved", HttpStatus.NO_CONTENT);
         // }
         return CommonUtil.createBuildResponse(allNotes, HttpStatus.OK);
+    }
+
+    @GetMapping("/delete/{id}")
+    public ResponseEntity<?> deleteNote(@PathVariable Integer id){
+        notesService.softDeleteNote(id);
+        return CommonUtil.createBuildResponseMessage("note deleted", HttpStatus.OK);
+    }
+    @GetMapping("/restore/{id}")
+    public ResponseEntity<?> restoreNote(@PathVariable Integer id){
+        notesService.restoreNote(id);
+        return CommonUtil.createBuildResponseMessage("note deleted", HttpStatus.OK);
+    }
+
+    @GetMapping("/recycle-bin")
+    public ResponseEntity<?> getUserRecycleBin(){
+        Integer userId=1;
+        List<NotesDto> userRecycleBin = notesService.getUserRecycleBin(userId);
+        if(userRecycleBin.isEmpty()){
+            return CommonUtil.createBuildResponseMessage("recycle bin empty", HttpStatus.OK);
+        }
+        return CommonUtil.createBuildResponse(userRecycleBin, HttpStatus.OK);
+    }
+    
+    @DeleteMapping("/delete/{id}")
+    public ResponseEntity<?> HardDeleteNote(@PathVariable Integer id){
+        notesService.hardDeleteNote(id);
+        return CommonUtil.createBuildResponseMessage("note deleted", HttpStatus.OK);
+    }
+    @DeleteMapping("/empty-bin")
+    public ResponseEntity<?> emptyRecycleBin(){
+        Integer notesDeleted=notesService.emptyRecycleBin();
+        return CommonUtil.createBuildResponseMessage("note deleted-"+ notesDeleted, HttpStatus.OK);
     }
     
 }
