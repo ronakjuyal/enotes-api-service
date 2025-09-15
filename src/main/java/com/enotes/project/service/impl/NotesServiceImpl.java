@@ -24,16 +24,20 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.ObjectUtils;
 import org.springframework.web.multipart.MultipartFile;
 
+import com.enotes.project.dto.FavouriteNotesDto;
 import com.enotes.project.dto.NoteResponse;
 import com.enotes.project.dto.NotesDto;
+import com.enotes.project.entity.FavouriteNotes;
 import com.enotes.project.entity.FileDetails;
 import com.enotes.project.entity.Notes;
 import com.enotes.project.exception.ResourceNotFoundException;
 import com.enotes.project.repository.CategoryRepository;
+import com.enotes.project.repository.FavouriteNoteRepository;
 import com.enotes.project.repository.FileRepository;
 import com.enotes.project.repository.NotesRepository;
 import com.enotes.project.service.NotesService;
 import com.fasterxml.jackson.databind.ObjectMapper;
+
 
 
 @Service
@@ -49,6 +53,9 @@ public class NotesServiceImpl implements NotesService{
 
     @Autowired
     FileRepository fileRepository;
+
+    @Autowired
+    FavouriteNoteRepository favouriteNoteRepository;
 
    @Value("${file.upload.path}")
 	private String uploadPath;
@@ -199,11 +206,51 @@ public class NotesServiceImpl implements NotesService{
     @Transactional
     public int emptyRecycleBin() {
         return notesRepository.deleteByIsDeletedTrue();
+    }
+
+    @Override
+    public void favouriteNotes(Integer notesId) {
+        Integer userId=1;
+        Notes notes = notesRepository.findById(notesId)
+                    .orElseThrow(()->new ResourceNotFoundException("notes not found - invalid notesId"));
+        FavouriteNotes favouriteNotes= FavouriteNotes.builder()
+                .notes(notes)
+                .userId(userId)
+                .build();
+        favouriteNoteRepository.save(favouriteNotes);
+    }
+
+    @Override
+    public List<FavouriteNotesDto> getUserFavouriteNotes() {
+        Integer userId=1;
+        List<FavouriteNotes> favNotes = favouriteNoteRepository.findByUserId(userId);
+        List<FavouriteNotesDto> map = favNotes.stream().map(fav->mapper.map(fav, FavouriteNotesDto.class)).toList();
+        return map;
+    }
+
+    @Override
+    public void unFavouriteNotes(Integer favouriteNotesId) {
         
+        if (!favouriteNoteRepository.existsById(favouriteNotesId)) {
+            throw new ResourceNotFoundException("notes not found - invalid FavouriteNotesId");
+        }   
+        favouriteNoteRepository.deleteById(favouriteNotesId);
+    }
+
+    @Override
+    public void copyNotes(Integer id) {
+        Notes note = notesRepository.findById(id)
+                .orElseThrow(()-> new ResourceNotFoundException("notes id invalid - not found"));
+        Notes copyNotes=Notes.builder()
+                .title(note.getTitle())
+                .description(note.getDescription())
+                .category(note.getCategory())
+                .isDeleted(false)
+                .fileDetails(null)
+                .build();
+        if(ObjectUtils.isEmpty(notesRepository.save(copyNotes))){
+            throw new ResourceNotFoundException("failed while coping notes - try again");
+        }
     }
     
-    
-
-    
-    
-}
+}   
