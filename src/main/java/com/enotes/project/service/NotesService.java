@@ -7,8 +7,10 @@ import java.util.List;
 
 import org.springframework.web.multipart.MultipartFile;
 
+import com.enotes.project.dto.FavouriteNotesDto;
 import com.enotes.project.dto.NoteResponse;
 import com.enotes.project.dto.NotesDto;
+
 import com.enotes.project.entity.FileDetails;
 
 
@@ -24,4 +26,9 @@ public interface NotesService {
     public List<NotesDto> getUserRecycleBin(Integer userId);
     public void hardDeleteNote(Integer id);
     public int emptyRecycleBin();
+    public void favouriteNotes(Integer notesId);
+    public void unFavouriteNotes(Integer notesId);
+    public List<FavouriteNotesDto> getUserFavouriteNotes();
+    public void copyNotes(Integer id);
+
 }

@@ -25,6 +25,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
+import com.enotes.project.dto.FavouriteNotesDto;
 import com.enotes.project.dto.NoteResponse;
 import com.enotes.project.dto.NotesDto;
 import com.enotes.project.entity.FileDetails;
@@ -110,7 +111,6 @@ public class NotesController {
         }
         return CommonUtil.createBuildResponse(userRecycleBin, HttpStatus.OK);
     }
-    
     @DeleteMapping("/delete/{id}")
     public ResponseEntity<?> HardDeleteNote(@PathVariable Integer id){
         notesService.hardDeleteNote(id);
@@ -120,6 +120,32 @@ public class NotesController {
     public ResponseEntity<?> emptyRecycleBin(){
         Integer notesDeleted=notesService.emptyRecycleBin();
         return CommonUtil.createBuildResponseMessage("note deleted-"+ notesDeleted, HttpStatus.OK);
+    }
+    @GetMapping("/fav/{id}")
+    public ResponseEntity<?> favouriteNote(@PathVariable Integer id){
+        notesService.favouriteNotes(id);
+        return CommonUtil.createBuildResponseMessage("favourite note added", HttpStatus.OK);
+
+    }
+    @DeleteMapping("/unfav/{favouriteNotesId}")
+    public ResponseEntity<?> unFavouriteNote(@PathVariable Integer favouriteNotesId){
+        notesService.favouriteNotes(favouriteNotesId);
+        return CommonUtil.createBuildResponseMessage("favourite note removed", HttpStatus.OK);
+        
+    }
+
+    @GetMapping("/user-fav-notes")
+    public ResponseEntity<?> getUserFavouriteNotes(){
+        List<FavouriteNotesDto> userFavouriteNotes = notesService.getUserFavouriteNotes();
+        return CommonUtil.createBuildResponse(userFavouriteNotes, HttpStatus.OK);
+        
+    }
+
+    @GetMapping("copy-notes/{id}")
+    public ResponseEntity<?> getUserFavouriteNotes(@PathVariable Integer id){
+        notesService.copyNotes(id);
+        return CommonUtil.createBuildResponse("note copied - success", HttpStatus.OK);
+        
     }
     
 }
