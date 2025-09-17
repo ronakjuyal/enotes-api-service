@@ -8,6 +8,9 @@ import org.springframework.stereotype.Component;
 import org.springframework.util.ObjectUtils;
 
 import com.enotes.project.dto.CategoryDto;
+import com.enotes.project.dto.TodoDto;
+import com.enotes.project.dto.TodoDto.StatusDto;
+import com.enotes.project.enums.TodoStatus;
 import com.enotes.project.exception.ValidationException;
 
 @Component
@@ -35,5 +38,19 @@ public class Validation {
             }
         }
         if(!error.isEmpty()) throw new ValidationException(error);
+    }
+
+    public static void todoValidation(TodoDto todo) {
+        StatusDto status = todo.getStatus();
+        Boolean isStatusValid = false;
+        for(TodoStatus s : TodoStatus.values()){
+            if(s.getId().equals(status.getId())){
+                isStatusValid = true;
+                break;
+            }
+        }
+        if(!isStatusValid){
+            throw new ValidationException(Map.of("status", "Invalid status value "+todo.getStatus().getId()));
+        }
     }
 }
